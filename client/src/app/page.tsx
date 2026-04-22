@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import InputBar from "@/components/InputBar";
 import MessageArea from "@/components/MessageArea";
 import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
 import API from "@/lib/api";
+import { Loader2, Globe, Link as LinkIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchInfo { stages: string[]; query: string; urls: string[]; }
 interface Message { id: number; content: string; isUser: boolean; type: string; isLoading?: boolean; searchInfo?: SearchInfo; }
 interface ChatItem { title: string; }
-type Tab = "home" | "chat" | "explore";
 
 // ── LocalStorage helpers ──
 const loadLocalChats = (): Record<string, ChatItem> => {
@@ -23,7 +23,6 @@ const saveLocalChat = (id: string, title: string) => {
   localStorage.setItem("chats_list", JSON.stringify(existing));
 };
 const saveLocalMessages = (id: string, messages: Message[]) => {
-  // Only save user + ai text (not loading state)
   const clean = messages.filter(m => !m.isLoading && m.content);
   localStorage.setItem(`messages_${id}`, JSON.stringify(clean));
 };
@@ -37,8 +36,13 @@ export default function Home() {
   const [currentMessage, setCurrentMessage] = useState("");
   const [checkpointId, setCheckpointId] = useState<string | null>(null);
   const [chats, setChats] = useState<Record<string, ChatItem>>(() => loadLocalChats());
-  const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [loadingHistory, setLoadingHistory] = useState(false);
+  
+  // Shared states for InputBar
+  const [isDeepResearch, setIsDeepResearch] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+
+  const isHomeView = !checkpointId && messages.length === 0;
 
   // ── Load active checkpoint on mount ──
   useEffect(() => {
@@ -64,13 +68,12 @@ export default function Home() {
   const switchToChat = (id: string) => {
     localStorage.setItem("checkpoint_id", id);
     setCheckpointId(id);
+    setUploadedFiles([]);
 
-    // 1. Show localStorage messages immediately (no flicker)
     const local = loadLocalMessages(id);
     if (local.length > 0) setMessages(local);
     else setLoadingHistory(true);
 
-    // 2. Try to fetch fresh history from backend
     fetch(`${API}/get_history/${id}`)
       .then(r => r.json())
       .then(d => {
@@ -93,14 +96,11 @@ export default function Home() {
 
   // ── Delete chat ──
   const handleDeleteChat = (id: string) => {
-    // Remove from localStorage
     const updated = loadLocalChats();
     delete updated[id];
     localStorage.setItem("chats_list", JSON.stringify(updated));
     localStorage.removeItem(`messages_${id}`);
     setChats(updated);
-
-    // If deleting active chat → go to new chat
     if (id === checkpointId) handleNewChat();
   };
 
@@ -109,22 +109,25 @@ export default function Home() {
     localStorage.removeItem("checkpoint_id");
     setCheckpointId(null);
     setMessages([]);
-    setActiveTab("chat");
+    setUploadedFiles([]);
   };
 
-  // ── Tab change ──
-  const handleTabChange = (tab: Tab) => {
-    if (tab === "home") handleNewChat();
-    else setActiveTab(tab);
+  const getOrCreateCheckpoint = () => {
+    if (checkpointId) return checkpointId;
+    const newId = crypto.randomUUID();
+    setCheckpointId(newId);
+    localStorage.setItem("checkpoint_id", newId);
+    return newId;
   };
 
-  // ── Send message ──
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    if (!currentMessage.trim()) return;
+  // ── Send message (can be triggered by form or manually) ──
+  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLInputElement>, manualMessage?: string) => {
+    if (e) e.preventDefault();
+    const messageToSubmit = manualMessage || currentMessage;
+    if (!messageToSubmit.trim()) return;
 
     const nextId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 1;
-    const userMsg: Message = { id: nextId, content: currentMessage, isUser: true, type: "message" };
+    const userMsg: Message = { id: nextId, content: messageToSubmit, isUser: true, type: "message" };
 
     setMessages(p => {
       const updated = [...p, userMsg];
@@ -132,14 +135,14 @@ export default function Home() {
       return updated;
     });
 
-    const input = currentMessage;
-    setCurrentMessage("");
+    const input = messageToSubmit;
+    if (!manualMessage) setCurrentMessage("");
 
     const aiId = nextId + 1;
     setMessages(p => [...p, { id: aiId, content: "", isUser: false, type: "message", isLoading: true, searchInfo: { stages: [], query: "", urls: [] } }]);
 
-    let url = `${API}/chat_stream/${encodeURIComponent(input)}`;
-    if (checkpointId) url += `?checkpoint_id=${checkpointId}`;
+    let url = `${API}/chat_stream/${encodeURIComponent(input)}?deep_research=${isDeepResearch}`;
+    if (checkpointId) url += `&checkpoint_id=${checkpointId}`;
 
     const es = new EventSource(url);
     let streamed = "";
@@ -178,65 +181,101 @@ export default function Home() {
     es.onerror = () => es.close();
   };
 
-  return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+  const handleCategoryClick = (prompt: string) => {
+    handleNewChat();
+    handleSubmit(undefined, prompt);
+  };
 
+  const allSources = messages.flatMap(m => m.searchInfo?.urls || []).filter((v, i, a) => a.indexOf(v) === i);
+
+  return (
+    <div className="flex h-screen bg-black overflow-hidden selection:bg-purple-500/30 selection:text-white">
+      
+      {/* Sidebar - Always visible now as requested */}
       <Sidebar
         chats={chats}
         activeId={checkpointId}
         onChatSelect={switchToChat}
         onNewChat={handleNewChat}
         onDeleteChat={handleDeleteChat}
+        onCategoryClick={handleCategoryClick}
       />
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col bg-white border-l border-gray-100 overflow-hidden">
-          <Header activeTab={activeTab} onTabChange={handleTabChange} />
-
-          {activeTab === "explore" ? (
-            <div className="flex-1 flex flex-col items-center justify-center px-8 bg-[#FAFAF8]">
-              <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center mb-5">
-                <svg className="w-6 h-6 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Explore Topics</h2>
-              <p className="text-gray-400 text-sm mb-8 text-center">Pick a topic to start exploring with AI.</p>
-              <div className="grid grid-cols-2 gap-3 w-full max-w-md">
-                {["🌍 World News", "💻 Technology", "🔬 Science", "📈 Finance", "🎨 Art & Design", "🧬 Health"].map(topic => (
-                  <button key={topic}
-                    onClick={() => { handleNewChat(); setCurrentMessage(topic.slice(3)); setActiveTab("chat"); }}
-                    className="px-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-700 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 transition-all text-left font-medium">
-                    {topic}
-                  </button>
-                ))}
-              </div>
+      {/* Main Chat Area */}
+      <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-700 ${isHomeView ? "items-center justify-center" : ""}`}>
+        {loadingHistory ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3 text-white/50">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="text-xs font-bold tracking-[0.3em] uppercase">Loading</span>
             </div>
-          ) : loadingHistory ? (
-            <div className="flex-1 flex items-center justify-center bg-[#FAFAF8]">
-              <div className="flex flex-col items-center gap-3 text-gray-400">
-                <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-                <span className="text-sm">Loading chat history…</span>
-              </div>
-            </div>
-          ) : (
-            <>
+          </div>
+        ) : (
+          <div className={`w-full h-full flex flex-col transition-all duration-700 ${isHomeView ? "max-w-4xl px-6" : ""}`}>
+            <div className={`flex-1 overflow-hidden flex flex-col ${isHomeView ? "justify-center" : ""}`}>
               <MessageArea messages={messages} />
+            </div>
+            
+            <div className={`${isHomeView ? "mb-12" : "mt-auto"}`}>
               <InputBar
                 currentMessage={currentMessage}
                 setCurrentMessage={setCurrentMessage}
                 onSubmit={handleSubmit}
                 checkpointId={checkpointId}
                 hasMessages={messages.length > 0}
+                isDeepResearch={isDeepResearch}
+                setIsDeepResearch={setIsDeepResearch}
+                uploadedFiles={uploadedFiles}
+                setUploadedFiles={setUploadedFiles}
+                getOrCreateCheckpoint={getOrCreateCheckpoint}
+                refreshChats={refreshChats}
               />
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* RIGHT PANE: Sources Panel (Desktop Only) */}
+      <AnimatePresence>
+        {messages.length > 0 && allSources.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            className="hidden lg:flex w-80 border-l border-white/5 bg-black/20 flex-col z-20"
+          >
+            <div className="p-5 border-b border-white/5 flex items-center gap-2 text-white/70">
+              <Globe className="w-4 h-4" />
+              <h3 className="font-semibold text-sm">Sources</h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {allSources.map((url, i) => {
+                let domain = url;
+                try { domain = new URL(url).hostname.replace('www.', ''); } catch(e){}
+                return (
+                  <a 
+                    key={i} 
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block p-3 rounded-xl glass-card hover:bg-white/5 transition-all border border-white/5 group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
+                        <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-white" />
+                      </div>
+                      <div className="overflow-hidden">
+                        <p className="text-sm font-medium text-gray-300 truncate">{domain}</p>
+                        <p className="text-[10px] text-gray-600 truncate mt-0.5 uppercase tracking-tighter">{url}</p>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

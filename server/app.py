@@ -39,8 +39,9 @@ llm_with_tools = llm.bind_tools(tools=tools)
 async def model(state: State, config: RunnableConfig):
     messages = state["messages"]
 
-    # ✅ FIXED: get thread_id from RunnableConfig (correct LangGraph way)
+    # ✅ FIXED: get thread_id and deep_research flag from RunnableConfig
     thread_id = config.get("configurable", {}).get("thread_id")
+    deep_research = config.get("configurable", {}).get("deep_research", False)
 
     # 🔥 RAG per chat
     if thread_id and thread_id in vector_dbs:
@@ -57,7 +58,11 @@ async def model(state: State, config: RunnableConfig):
             HumanMessage(content=f"Context:\n{context}\n\nQuestion:\n{query}")
         ]
 
-    result = await llm_with_tools.ainvoke(messages)
+    if deep_research:
+        result = await llm_with_tools.ainvoke(messages)
+    else:
+        result = await llm.ainvoke(messages)
+    
     return {"messages": [result]}
 
 # ---------------- ROUTER ----------------
@@ -117,7 +122,7 @@ def serialise(chunk):
     return ""
 
 # ---------------- STREAM ----------------
-async def generate_chat_responses(message: str, checkpoint_id: Optional[str] = None):
+async def generate_chat_responses(message: str, checkpoint_id: Optional[str] = None, deep_research: bool = False):
 
     is_new = checkpoint_id is None
 
@@ -130,7 +135,7 @@ async def generate_chat_responses(message: str, checkpoint_id: Optional[str] = N
                 "title": message[:30]
             }
 
-    config = {"configurable": {"thread_id": checkpoint_id}}
+    config = {"configurable": {"thread_id": checkpoint_id, "deep_research": deep_research}}
 
     events = graph.astream_events(
         {"messages": [HumanMessage(content=message)]},
@@ -168,9 +173,9 @@ async def generate_chat_responses(message: str, checkpoint_id: Optional[str] = N
 
 # ---------------- CHAT API ----------------
 @app.get("/chat_stream/{message}")
-async def chat_stream(message: str, checkpoint_id: Optional[str] = Query(None)):
+async def chat_stream(message: str, checkpoint_id: Optional[str] = Query(None), deep_research: bool = Query(False)):
     return StreamingResponse(
-        generate_chat_responses(message, checkpoint_id),
+        generate_chat_responses(message, checkpoint_id, deep_research),
         media_type="text/event-stream"
     )
 
@@ -203,6 +208,11 @@ async def get_chats():
 # ---------------- FILE UPLOAD ----------------
 @app.post("/upload/{chat_id}")
 async def upload_file(chat_id: str, file: UploadFile = File(...)):
+
+    if chat_id not in chat_store:
+        chat_store[chat_id] = {
+            "title": "Document Chat"
+        }
 
     file_path = f"temp_{file.filename}"
 

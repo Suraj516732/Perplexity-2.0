@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { Plus, MessageSquare, Trash2, Globe, Code2, BookOpen, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+
 interface ChatItem { title: string; }
 interface SidebarProps {
   chats: Record<string, ChatItem>;
@@ -7,90 +11,124 @@ interface SidebarProps {
   onChatSelect: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
+  onCategoryClick: (prompt: string) => void;
 }
 
-export default function Sidebar({ chats, activeId, onChatSelect, onNewChat, onDeleteChat }: SidebarProps) {
-  return (
-    <div className="w-72 h-screen flex flex-col bg-white border-r border-gray-100 flex-shrink-0">
+export default function Sidebar({ chats, activeId, onChatSelect, onNewChat, onDeleteChat, onCategoryClick }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-5 h-14 border-b border-gray-100">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+  const categories = [
+    { name: "News", icon: Globe, prompt: "What are the latest tech news today?" },
+    { name: "Coding", icon: Code2, prompt: "Best practices for React development" },
+    { name: "Study", icon: BookOpen, prompt: "Explain quantum mechanics simply" },
+  ];
+
+  return (
+    <motion.div 
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 280 }}
+      className="h-screen flex flex-col bg-black border-r border-white/5 flex-shrink-0 relative z-20"
+    >
+      {/* Collapse Toggle */}
+      <button 
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute -right-3 top-6 w-6 h-6 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-colors z-30 cursor-pointer"
+      >
+        {isCollapsed ? <ChevronRight className="w-3 h-3 text-gray-400" /> : <ChevronLeft className="w-3 h-3 text-gray-400" />}
+      </button>
+
+      {/* Brand / Home Button */}
+      <div 
+        onClick={onNewChat}
+        className="flex items-center gap-3 px-5 h-20 border-b border-white/5 shrink-0 overflow-hidden cursor-pointer hover:bg-white/5 transition-colors group"
+      >
+        <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
+          <Sparkles className="w-5 h-5 text-white/70 group-hover:text-white transition-colors" />
         </div>
-        <span className="font-semibold text-gray-900 text-[15px] tracking-tight">Perplexity</span>
-        <span className="text-xs font-semibold text-gray-800 bg-gray-100 px-1.5 py-0.5 rounded-md">2.0</span>
+        {!isCollapsed && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col whitespace-nowrap">
+            <span className="font-semibold text-white/90 text-[15px] tracking-tight">AI Search</span>
+            <span className="text-[9px] uppercase tracking-[0.2em] text-gray-500 font-bold">Pro Edition</span>
+          </motion.div>
+        )}
       </div>
 
-      {/* New Chat */}
-      <div className="px-4 pt-3">
+      {/* New Chat Button */}
+      <div className="px-4 pt-6 shrink-0">
         <button
           onClick={onNewChat}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150 group"
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white/80 transition-all cursor-pointer border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20 active:scale-[0.98]
+            ${isCollapsed ? "px-0" : "px-4"} 
+            bg-white/5`}
         >
-          <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-          New chat
+          <Plus className="w-5 h-5 shrink-0" />
+          {!isCollapsed && <span>New Chat</span>}
         </button>
       </div>
 
-      {/* Recents */}
-      {Object.keys(chats).length > 0 && (
-        <>
-          <p className="px-5 pt-5 pb-1.5 text-xs font-semibold text-gray-400 uppercase tracking-widest">
-            Recents
-          </p>
-          <div className="flex-1 overflow-y-auto px-4 space-y-0.5 pb-4">
-            {Object.entries(chats)
-              .reverse()
-              .map(([id, chat]) => (
-                <div
-                  key={id}
-                  className={`group flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-colors duration-150 text-[13px]
-                    ${activeId === id
-                      ? "bg-violet-50 text-violet-700 font-medium border border-violet-100"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                >
-                  {/* Chat icon + title — clickable to open */}
-                  <div
-                    className="flex items-center gap-2 flex-1 min-w-0"
-                    onClick={() => onChatSelect(id)}
-                  >
-                    <svg className="w-3.5 h-3.5 flex-shrink-0 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    <span className="truncate">{chat.title || "Untitled"}</span>
-                  </div>
-
-                  {/* Delete button — appears on hover */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(`Delete "${chat.title || "Untitled"}"?`)) {
-                        onDeleteChat(id);
-                      }
-                    }}
-                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 p-1 rounded-md hover:bg-red-50 hover:text-red-500 text-gray-400"
-                    title="Delete chat"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+      {/* Categories */}
+      {!isCollapsed && (
+        <div className="px-4 pt-8 shrink-0">
+          <p className="px-2 text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-4">Categories</p>
+          <div className="space-y-1">
+            {categories.map((cat) => (
+              <button 
+                key={cat.name}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-gray-500 hover:text-white hover:bg-white/5 transition-all cursor-pointer text-left group"
+                onClick={() => onCategoryClick(cat.prompt)}
+              >
+                <cat.icon className="w-4 h-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
+                {cat.name}
+              </button>
+            ))}
           </div>
-        </>
+        </div>
       )}
 
-      {!Object.keys(chats).length && <div className="flex-1" />}
-    </div>
+      {/* Recents */}
+      <div className="flex-1 overflow-y-auto px-4 mt-10 pb-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full">
+        {!isCollapsed && Object.keys(chats).length > 0 && (
+          <p className="px-2 text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-4">Recent</p>
+        )}
+        
+        <div className="space-y-1">
+          {Object.entries(chats)
+            .reverse()
+            .map(([id, chat]) => {
+              const isActive = activeId === id;
+              return (
+                <div
+                  key={id}
+                  onClick={() => onChatSelect(id)}
+                  className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-[13px]
+                    ${isActive
+                      ? "bg-white/5 text-white border border-white/10"
+                      : "text-gray-500 hover:bg-white/5 hover:text-gray-300 border border-transparent"
+                    }`}
+                >
+                  <MessageSquare className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "opacity-30"}`} />
+                  
+                  {!isCollapsed && (
+                    <>
+                      <span className="truncate flex-1 font-medium">{chat.title || "Untitled"}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${chat.title || "Untitled"}"?`)) {
+                            onDeleteChat(id);
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    </motion.div>
   );
 }
