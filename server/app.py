@@ -208,27 +208,28 @@ async def get_chats():
 # ---------------- FILE UPLOAD ----------------
 @app.post("/upload/{chat_id}")
 async def upload_file(chat_id: str, file: UploadFile = File(...)):
-
     if chat_id not in chat_store:
-        chat_store[chat_id] = {
-            "title": "Document Chat"
-        }
+        chat_store[chat_id] = {"title": "Document Chat"}
 
     file_path = f"temp_{file.filename}"
-
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
-    loader = PyPDFLoader(file_path)
-    docs = loader.load()
+    try:
+        loader = PyPDFLoader(file_path)
+        docs = loader.load()
+        
+        # Chunking to prevent lag and improve retrieval
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = text_splitter.split_documents(docs)
 
-    db = FAISS.from_documents(docs, OpenAIEmbeddings())
+        db = FAISS.from_documents(chunks, OpenAIEmbeddings())
 
-    if chat_id not in vector_dbs:
-        vector_dbs[chat_id] = []
-
-    vector_dbs[chat_id].append(db)
-
-    os.remove(file_path)
+        if chat_id not in vector_dbs:
+            vector_dbs[chat_id] = []
+        vector_dbs[chat_id].append(db)
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     return {"status": "uploaded"}

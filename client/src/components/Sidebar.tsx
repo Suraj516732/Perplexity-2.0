@@ -47,7 +47,7 @@ export default function Sidebar({ chats, activeId, onChatSelect, onNewChat, onDe
         </div>
         {!isCollapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col whitespace-nowrap">
-            <span className="font-semibold text-white/90 text-[15px] tracking-tight">AI Search</span>
+            <span className="font-semibold text-white/90 text-[15px] tracking-tight text-white">Perplexity 2.0</span>
             <span className="text-[9px] uppercase tracking-[0.2em] text-gray-500 font-bold">Pro Edition</span>
           </motion.div>
         )}

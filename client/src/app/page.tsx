@@ -127,7 +127,13 @@ export default function Home() {
     if (!messageToSubmit.trim()) return;
 
     const nextId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 1;
-    const userMsg: Message = { id: nextId, content: messageToSubmit, isUser: true, type: "message" };
+    const userMsg: Message = { 
+      id: nextId, 
+      content: messageToSubmit, 
+      isUser: true, 
+      type: "message",
+      files: [...uploadedFiles] // Attach files to the message
+    };
 
     setMessages(p => {
       const updated = [...p, userMsg];
@@ -137,6 +143,7 @@ export default function Home() {
 
     const input = messageToSubmit;
     if (!manualMessage) setCurrentMessage("");
+    setUploadedFiles([]); // Clear files after sending
 
     const aiId = nextId + 1;
     setMessages(p => [...p, { id: aiId, content: "", isUser: false, type: "message", isLoading: true, searchInfo: { stages: [], query: "", urls: [] } }]);

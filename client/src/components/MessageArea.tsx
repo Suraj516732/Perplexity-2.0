@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Sparkles, Search, CheckCircle2, Globe, Link as LinkIcon, FileText, Copy, Check } from "lucide-react";
@@ -72,8 +72,16 @@ const Loader2 = ({ className }: { className?: string }) => (
 );
 
 const MessageArea = ({ messages }: { messages: Message[] }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 custom-scrollbar scroll-smooth bg-transparent relative z-10">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 md:px-8 py-6 custom-scrollbar scroll-smooth bg-transparent relative z-10">
       {messages.length === 0 ? (
         <div className="h-full flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto">
           <motion.div 
@@ -137,6 +145,16 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                       : "glass-card text-gray-100 rounded-tl-sm w-full"
                     }`}
                   >
+                    {msg.isUser && msg.files && msg.files.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {msg.files.map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-white/90 shadow-sm backdrop-blur-sm">
+                            <FileText className="w-3 h-3" />
+                            <span className="max-w-[120px] truncate">{file}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {msg.isLoading ? (
                       <div className="flex items-center gap-3">
                         <span className="text-gray-400 text-sm font-medium">Thinking</span>
