@@ -110,8 +110,11 @@ search_tool = TavilySearchResults(max_results=4)
 tools = [search_tool]
 
 # ---------------- LLM ----------------
-llm = ChatOpenAI(model="gpt-4o")
-llm_with_tools = llm.bind_tools(tools=tools)
+llm_fast = ChatOpenAI(model="gpt-4o-mini")
+llm_pro = ChatOpenAI(model="gpt-4o")
+
+llm_fast_tools = llm_fast.bind_tools(tools=tools)
+llm_pro_tools = llm_pro.bind_tools(tools=tools)
 
 SYSTEM_PROMPT = """You are Perplexity 2.0, a highly intelligent and professional AI search assistant.
 You have access to conversation history and real-time search tools.
@@ -158,9 +161,9 @@ async def model(state: State, config: RunnableConfig):
     final_messages = [{"role": "system", "content": system_content}] + messages
 
     if deep_research:
-        result = await llm_with_tools.ainvoke(final_messages)
+        result = await llm_pro_tools.ainvoke(final_messages)
     else:
-        result = await llm.ainvoke(final_messages)
+        result = await llm_fast_tools.ainvoke(final_messages)
     
     return {"messages": [result]}
 
