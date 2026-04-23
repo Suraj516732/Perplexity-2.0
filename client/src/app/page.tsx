@@ -5,7 +5,7 @@ import InputBar from "@/components/InputBar";
 import MessageArea from "@/components/MessageArea";
 import Sidebar from "@/components/Sidebar";
 import API from "@/lib/api";
-import { Loader2, Globe, Link as LinkIcon } from "lucide-react";
+import { Loader2, Globe, Link as LinkIcon, Menu, X, Plus, Sparkles, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchInfo { stages: string[]; query: string; urls: string[]; }
@@ -41,6 +41,7 @@ export default function Home() {
   // Shared states for InputBar
   const [isDeepResearch, setIsDeepResearch] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isHomeView = !checkpointId && messages.length === 0;
 
@@ -196,9 +197,22 @@ export default function Home() {
   const allSources = messages.flatMap(m => m.searchInfo?.urls || []).filter((v, i, a) => a.indexOf(v) === i);
 
   return (
-    <div className="flex h-screen bg-black overflow-hidden selection:bg-purple-500/30 selection:text-white">
+    <div className="flex h-screen bg-black overflow-hidden selection:bg-[#D4C491]/30 selection:text-white">
       
-      {/* Sidebar - Always visible now as requested */}
+      {/* Sidebar Overlay (Mobile) */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
       <Sidebar
         chats={chats}
         activeId={checkpointId}
@@ -206,10 +220,39 @@ export default function Home() {
         onNewChat={handleNewChat}
         onDeleteChat={handleDeleteChat}
         onCategoryClick={handleCategoryClick}
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
       />
 
       {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-700 ${isHomeView ? "items-center justify-center" : ""}`}>
+      <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-700`}>
+        
+        {/* Mobile Header */}
+        <div className="lg:hidden h-16 w-full border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-30 bg-black/80 backdrop-blur-xl sticky top-0">
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all active:scale-95"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={handleNewChat}>
+             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#D4C491]/20 to-[#A39161]/20 border border-white/10 flex items-center justify-center shadow-lg shadow-[#D4C491]/10">
+                <Sparkles className="w-5 h-5 text-[#D4C491]/80" />
+             </div>
+             <div className="flex flex-col">
+               <span className="font-bold text-[13px] text-white tracking-tight leading-tight uppercase">Perplexity 2.0</span>
+               <span className="text-[8px] text-gray-500 font-bold tracking-[0.1em] uppercase">Pro Edition</span>
+             </div>
+          </div>
+
+          <button 
+            onClick={handleNewChat}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all active:scale-95"
+          >
+            {isHomeView ? <Plus className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
+        </div>
         {loadingHistory ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3 text-white/50">
@@ -218,8 +261,22 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className={`w-full h-full flex flex-col transition-all duration-700 ${isHomeView ? "max-w-4xl px-6" : ""}`}>
-            <div className={`flex-1 overflow-hidden flex flex-col ${isHomeView ? "justify-center" : ""}`}>
+          <div className={`w-full h-full flex flex-col transition-all duration-700 ${isHomeView ? "items-center justify-center max-w-4xl mx-auto px-6" : ""}`}>
+            <div className={`flex-1 overflow-hidden flex flex-col w-full ${isHomeView ? "justify-center" : "relative"}`}>
+              
+              {/* Desktop Back Button */}
+              {!isHomeView && (
+                <div className="hidden lg:flex absolute top-6 left-8 z-30">
+                  <button 
+                    onClick={handleNewChat}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all active:scale-95 group"
+                  >
+                    <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                    <span className="text-sm font-medium">Home</span>
+                  </button>
+                </div>
+              )}
+
               <MessageArea messages={messages} />
             </div>
             

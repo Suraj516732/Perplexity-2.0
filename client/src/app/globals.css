@@ -3,9 +3,11 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
-  --primary-gradient: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+  --accent: #D4C491;
+  --accent-muted: rgba(212, 196, 145, 0.2);
+  --primary-gradient: linear-gradient(135deg, #D4C491 0%, #A39161 100%);
   --glass-bg: rgba(0, 0, 0, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 @theme inline {
@@ -51,11 +53,11 @@ body {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(212, 196, 145, 0.1);
     border-radius: 10px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(212, 196, 145, 0.2);
   }
 
   /* Global scrollbar fix for non-container scrolling */

@@ -121,7 +121,7 @@ export default function InputBar({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex gap-4 mb-5 flex-wrap justify-center"
+              className="flex gap-2 md:gap-4 mb-3 md:mb-5 flex-wrap justify-center px-2"
             >
               {chips.map(chip => (
                 <motion.button 
@@ -129,10 +129,10 @@ export default function InputBar({
                   whileHover={{ y: -2, backgroundColor: "rgba(255,255,255,0.08)" }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setCurrentMessage(chip.label)}
-                  className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border border-white/5 ${chip.bg} transition-all cursor-pointer`}
+                  className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-2xl border border-white/5 ${chip.bg} transition-all cursor-pointer`}
                 >
-                  <chip.icon className={`w-4 h-4 ${chip.color}`} />
-                  <span className="text-[13px] font-medium text-gray-400 group-hover:text-gray-200 transition-colors">{chip.label}</span>
+                  <chip.icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${chip.color}`} />
+                  <span className="text-[11px] md:text-[13px] font-medium text-gray-400 group-hover:text-gray-200 transition-colors whitespace-nowrap">{chip.label}</span>
                 </motion.button>
               ))}
             </motion.div>
@@ -144,26 +144,26 @@ export default function InputBar({
           onSubmit={onSubmit}
           animate={{ 
             boxShadow: isFocused 
-              ? "0 0 30px rgba(168, 85, 247, 0.2), 0 0 0 1px rgba(168, 85, 247, 0.5)" 
+              ? "0 0 30px rgba(212, 196, 145, 0.2), 0 0 0 1px rgba(212, 196, 145, 0.5)" 
               : "0 8px 32px 0 rgba(0,0,0,0.37), 0 0 0 1px rgba(255,255,255,0.1)"
           }}
           transition={{ duration: 0.2 }}
-          className="glass-card rounded-2xl p-2 flex flex-col gap-2 relative overflow-hidden"
+          className="glass-card rounded-xl md:rounded-2xl p-1.5 md:p-2 flex flex-col gap-1 md:gap-2 relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-50 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#D4C491]/5 to-[#A39161]/5 opacity-50 pointer-events-none" />
 
           {/* Top row: Input */}
           <div className="flex items-center px-2">
             <Search className="w-5 h-5 text-gray-400 shrink-0 mr-3" />
             <input 
               type="text" 
-              placeholder="Ask anything or paste a link..."
+              placeholder="Ask anything..."
               value={currentMessage} 
               onChange={e => setCurrentMessage(e.target.value)} 
               onKeyDown={handleKeyDown}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              className="flex-grow bg-transparent outline-none text-base text-gray-100 placeholder-gray-500 py-3 relative z-10" 
+              className="flex-grow bg-transparent outline-none text-[15px] md:text-base text-gray-100 placeholder-gray-500 py-2.5 md:py-3 relative z-10" 
             />
           </div>
 
@@ -180,9 +180,9 @@ export default function InputBar({
                 type="button" 
                 onClick={() => setIsDeepResearch(!isDeepResearch)}
                 className={`ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer border
-                  ${isDeepResearch ? "bg-purple-500/20 text-purple-300 border-purple-500/30" : "bg-white/5 text-gray-400 border-transparent hover:bg-white/10"}`}
+                  ${isDeepResearch ? "bg-[#D4C491]/20 text-[#D4C491] border-[#D4C491]/30" : "bg-white/5 text-gray-400 border-transparent hover:bg-white/10"}`}
               >
-                <Zap className={`w-3.5 h-3.5 ${isDeepResearch ? "fill-purple-400 text-purple-400" : ""}`} />
+                <Zap className={`w-3.5 h-3.5 ${isDeepResearch ? "fill-[#D4C491] text-[#D4C491]" : ""}`} />
                 {isDeepResearch ? "Deep Research" : "Fast Search"}
               </button>
             </div>
@@ -194,7 +194,7 @@ export default function InputBar({
               whileTap={currentMessage.trim() ? { scale: 0.95 } : {}}
               className={`p-2.5 rounded-xl flex items-center justify-center transition-all cursor-pointer
                 ${currentMessage.trim() 
-                  ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:shadow-[0_0_20px_rgba(255,255,255,0.5)]" 
+                  ? "bg-[#D4C491] text-black shadow-[0_0_15px_rgba(212,196,145,0.3)] hover:shadow-[0_0_20px_rgba(212,196,145,0.5)]" 
                   : "bg-white/10 text-gray-500 cursor-not-allowed"}`}
             >
               <ArrowUp className="w-5 h-5" strokeWidth={3} />
@@ -204,7 +204,7 @@ export default function InputBar({
 
         <div className="text-center mt-3">
           <p className="text-[11px] text-gray-500 flex items-center justify-center gap-1">
-            Powered by Multi-step AI Reasoning <Sparkles className="w-3 h-3 text-purple-400" />
+            Powered by Multi-step AI Reasoning <Sparkles className="w-3 h-3 text-[#D4C491]" />
           </p>
         </div>
 

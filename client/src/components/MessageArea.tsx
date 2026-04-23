@@ -24,7 +24,7 @@ const Dots = () => (
     {[0, 150, 300].map(d => (
       <motion.span 
         key={d} 
-        className="w-2 h-2 bg-purple-500 rounded-full"
+        className="w-2 h-2 bg-[#D4C491] rounded-full"
         animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
         transition={{ repeat: Infinity, duration: 1, delay: d / 1000 }}
       />
@@ -51,9 +51,9 @@ const SearchBadge = ({ info }: { info: SearchInfo }) => {
   return (
     <div className="flex flex-col gap-2 mb-3 mt-1">
       {info.stages.includes("searching") && !info.stages.includes("reading") && (
-        <div className="flex items-center gap-2 text-purple-400 text-xs font-medium bg-purple-500/10 px-3 py-1.5 rounded-full w-fit border border-purple-500/20">
+        <div className="flex items-center gap-2 text-[#D4C491] text-xs font-medium bg-[#D4C491]/10 px-3 py-1.5 rounded-full w-fit border border-[#D4C491]/20">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          <span>Searching for <em className="not-italic text-purple-300">"{info.query}"</em></span>
+          <span>Searching for <em className="not-italic text-[#D4C491]/80">"{info.query}"</em></span>
         </div>
       )}
       {info.stages.includes("reading") && (
@@ -88,7 +88,7 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-8"
+            className="mb-4 md:mb-8"
           >
              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative group overflow-hidden">
                 <Sparkles className="w-8 h-8 text-white/80 group-hover:text-white transition-colors" />
@@ -98,26 +98,18 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
           
           <motion.h2 
             initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-4xl md:text-5xl font-semibold text-white mb-6 tracking-tight"
+            className="text-2xl md:text-5xl font-semibold text-white mb-3 md:mb-6 tracking-tight leading-tight"
           >
-            What do you want to <span className="text-gray-400">know?</span>
+            What do you want to <span className="text-[#D4C491]">know?</span>
           </motion.h2>
           
           <motion.p 
             initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.5 }}
-            className="text-gray-500 text-lg md:text-xl max-w-2xl font-normal leading-relaxed"
+            className="text-gray-500 text-sm md:text-xl max-w-xl font-normal leading-relaxed"
           >
             Experience the future of search. Real-time answers, accurate sources, and deep reasoning.
           </motion.p>
 
-          <motion.div 
-             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-             className="mt-12 flex gap-10 items-center opacity-40 grayscale"
-          >
-             <div className="flex items-center gap-2"><Globe className="w-4 h-4"/> <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Global Web</span></div>
-             <div className="flex items-center gap-2"><FileText className="w-4 h-4"/> <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Contextual PDF</span></div>
-             <div className="flex items-center gap-2"><Search className="w-4 h-4"/> <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Neural Search</span></div>
-          </motion.div>
         </div>
       ) : (
         <div className="w-full max-w-3xl mx-auto space-y-8 pb-10">
@@ -130,8 +122,8 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                 className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
               >
                 {!msg.isUser && (
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center mr-4 flex-shrink-0 mt-1 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-                    <Sparkles className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                    <Sparkles className="w-4 h-4 text-white/70" />
                   </div>
                 )}
 
@@ -139,10 +131,10 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                   
                   {!msg.isUser && msg.searchInfo && <SearchBadge info={msg.searchInfo} />}
                   
-                  <div className={`group relative rounded-2xl px-5 py-4 text-[15px] leading-relaxed
+                  <div className={`group relative rounded-2xl px-4 md:px-5 py-3 md:py-4 text-[14px] md:text-[15px] leading-relaxed
                     ${msg.isUser
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-tr-sm shadow-lg shadow-purple-500/20"
-                      : "glass-card text-gray-100 rounded-tl-sm w-full"
+                      ? "bg-white/10 text-white border border-white/10 rounded-tr-sm"
+                      : "bg-[#0A0A0A] border border-white/5 text-gray-100 rounded-tl-sm w-full"
                     }`}
                   >
                     {msg.isUser && msg.files && msg.files.length > 0 && (
@@ -165,7 +157,15 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            a: ({ ...props }) => <a className="text-blue-400 hover:text-blue-300 underline decoration-blue-400/30 underline-offset-2" target="_blank" rel="noopener noreferrer" {...props} />,
+                            h1: ({ ...props }) => <h1 className="text-2xl md:text-3xl font-bold text-white mt-8 mb-4 tracking-tight border-b border-white/5 pb-2" {...props} />,
+                            h2: ({ ...props }) => <h2 className="text-xl md:text-2xl font-bold text-white mt-8 mb-3 tracking-tight" {...props} />,
+                            h3: ({ ...props }) => <h3 className="text-lg md:text-xl font-bold text-white mt-6 mb-2 tracking-tight" {...props} />,
+                            p: ({ ...props }) => <p className="mb-4 last:mb-0 leading-relaxed text-gray-300" {...props} />,
+                            strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />,
+                            ul: ({ ...props }) => <ul className="list-disc pl-5 mb-4 space-y-2 text-gray-300" {...props} />,
+                            ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-2 text-gray-300" {...props} />,
+                            li: ({ ...props }) => <li className="leading-relaxed" {...props} />,
+                            a: ({ ...props }) => <a className="text-[#D4C491] hover:text-[#E5D5A2] underline decoration-[#D4C491]/30 underline-offset-2 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
                             code: ({ className, children, ...props }) => {
                               const isInline = !className;
                               return isInline ? (
@@ -173,7 +173,7 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                                   {children}
                                 </code>
                               ) : (
-                                <pre className="relative bg-[#0d0d0d] text-gray-200 p-4 rounded-xl overflow-x-auto my-4 font-mono text-[13px] border border-white/10 shadow-inner">
+                                <pre className="relative bg-[#0d0d0d] text-gray-200 p-4 rounded-xl overflow-x-auto my-6 font-mono text-[13px] border border-white/10 shadow-inner">
                                   <div className="absolute top-2 right-2"><CopyButton text={String(children)} /></div>
                                   <code className={className} {...props}>{children}</code>
                                 </pre>
