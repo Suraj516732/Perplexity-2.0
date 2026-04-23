@@ -1,91 +1,165 @@
-Perplexity 2.0
-A modern, responsive AI chat interface with integrated web search functionality. Perplexity 2.0 provides a clean UI similar to Perplexity.ai, combining conversational AI with real-time search capabilities
+# 🚀 Perplexity 2.0
 
-✨ Features
-Real-time AI Responses - Stream AI responses as they're generated
-Integrated Web Search - AI can search the web for up-to-date information
-Conversation Memory - Maintains context throughout your conversation
-Search Process Transparency - Visual indicators show searching, reading, and writing stages
-Responsive Design - Clean, modern UI that works across devices
-🏗️ Architecture
-Perplexity 2.0 follows a client-server architecture:
+A modern, full-stack AI-powered search assistant that combines conversational intelligence with real-time web search and document understanding.
 
-Client (Next.js + React)
-Modern React application built with Next.js
-Real-time streaming updates using Server-Sent Events (SSE)
-Components for message display, search status, and input handling
-Server (FastAPI + LangGraph)
-Python backend using FastAPI for API endpoints
-LangGraph implementation for conversation flow with LLM and tools
-Integration with Tavily Search API for web searching capabilities
-Server-Sent Events for real-time streaming of AI responses
-🚀 Getting Started
-Prerequisites
-Node.js 18+
-Python 3.10+
-OpenAI API key
-Tavily API key
-Installation
-Clone the repository
+Unlike traditional chatbots, **Perplexity 2.0 doesn’t just answer — it thinks, searches, and reasons.**
 
+---
+
+## ✨ Key Features
+
+* ⚡ **Real-time Streaming Responses**
+  AI responses are streamed live using Server-Sent Events (SSE)
+
+* 🌐 **Integrated Web Search**
+  Fetches real-time data using Tavily API for up-to-date answers
+
+* 🧠 **Multi-step Reasoning (LangGraph)**
+  Intelligent agent workflow with tool-calling capability
+
+* 📄 **PDF Intelligence (RAG)**
+  Upload documents and ask contextual questions
+
+* 💬 **Conversation Memory**
+  Persistent chat sessions with PostgreSQL / SQLite fallback
+
+* 🔍 **Search Transparency**
+  Visual indicators: *Thinking → Searching → Responding*
+
+* 📱 **Responsive UI**
+  Clean, modern interface inspired by Perplexity AI
+
+---
+
+## 🏗️ Architecture
+
+### 🖥️ Client (Next.js + React)
+
+* Modern React app with Next.js
+* Real-time streaming via SSE
+* Dynamic UI for chat, search states, and responses
+
+### ⚙️ Server (FastAPI + LangGraph)
+
+* FastAPI backend for high-performance APIs
+* LangGraph-powered AI agent system
+* Tool integration (Web Search + RAG)
+* Streaming responses via SSE
+
+### 🧠 AI Stack
+
+* LLM: GPT-4o
+* Search: Tavily API
+* Vector DB: FAISS
+* Memory: PostgreSQL (with SQLite fallback)
+
+---
+
+## 🔄 How It Works
+
+1. User sends a query
+2. AI analyzes intent (search vs direct answer)
+3. If needed:
+
+   * Performs real-time web search
+   * Retrieves relevant context
+4. Applies multi-step reasoning
+5. Streams response back in real-time
+6. Displays sources and reasoning stages
+
+---
+
+## 🚀 Getting Started
+
+### 📌 Prerequisites
+
+* Node.js 18+
+* Python 3.10+
+* OpenAI API Key
+* Tavily API Key
+
+---
+
+### ⚙️ Installation
+
+```bash
 git clone https://github.com/harishneel1/perplexity_2.0.git
 cd perplexity_2.0
-Set up the server
+```
 
+### 🔧 Backend Setup
+
+```bash
 cd server
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-Configure environment variables
-Create a .env file in the server directory: OPENAI_API_KEY=your_openai_api_key TAVILY_API_KEY=your_tavily_api_key
+```
 
-Set up the client
+Create `.env` file:
 
+```
+OPENAI_API_KEY=your_key
+TAVILY_API_KEY=your_key
+DATABASE_URL=your_postgres_url (optional)
+```
+
+---
+
+### 💻 Frontend Setup
+
+```bash
 cd ../client
 npm install
+```
 
-### Running the Application
+---
 
-1. **Start the server**
-   ```bash
-   cd server
-   uvicorn app:app --reload
+### ▶️ Run the App
 
-2. **Start the client**
-   ```bash
-   cd client
-   npm run dev
+```bash
+# Start backend
+cd server
+uvicorn app:app --reload
 
-3. **Open your browser and navigate to http://localhost:3000**   
+# Start frontend
+cd client
+npm run dev
+```
 
-## 🔍 How It Works
+👉 Open: http://localhost:3000
 
-1. **User sends a message** through the chat interface
-2. **Server processes the message** using GPT-4o
-3. **AI decides** whether to use search or respond directly
-4. If search is needed:
-   - Search query is sent to Tavily API
-   - Results are processed and provided back to the AI
-   - AI uses this information to formulate a response
-5. **Response is streamed** back to the client in real-time
-6. **Search stages are displayed** to the user (searching, reading, writing)
+---
+
+## 📸 Demo
+
+*Add screenshots or demo video here*
+
+---
+
+## 🧠 What I Learned
+
+* Building real-world AI agents using LangGraph
+* Implementing streaming architectures (SSE)
+* Designing RAG pipelines for document understanding
+* Managing state and memory in AI systems
+* Combining search + reasoning for better AI responses
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Feel free to fork and improve.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+---
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License
 
-## 🙏 Acknowledgments
+---
 
-- Inspired by the UI and functionality of [Perplexity.ai](https://www.perplexity.ai/)
-- Built with [Next.js](https://nextjs.org/), [React](https://reactjs.org/), [FastAPI](https://fastapi.tiangolo.com/), and [LangGraph](https://github.com/langchain-ai/langgraph)
-- Powered by [OpenAI GPT-4o](https://openai.com/) and [Tavily Search API](https://tavily.com/)
+## 🙌 Acknowledgements
+
+Inspired by Perplexity AI
+Built using modern AI + web technologies

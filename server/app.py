@@ -18,6 +18,7 @@ import sqlite3
 import json
 from uuid import uuid4
 import os
+from datetime import datetime
 
 load_dotenv()
 
@@ -91,6 +92,16 @@ def save_chat_to_db(checkpoint_id, title):
         conn.commit()
         conn.close()
 
+def delete_chat_from_db(checkpoint_id):
+    if DB_TYPE == "postgres" and pg_pool:
+        with pg_pool.connection() as conn:
+            conn.execute("DELETE FROM chat_store WHERE checkpoint_id = %s", (checkpoint_id,))
+    else:
+        conn = sqlite3.connect("database.db")
+        conn.execute("DELETE FROM chat_store WHERE checkpoint_id = ?", (checkpoint_id,))
+        conn.commit()
+        conn.close()
+
 # chat_store = get_chat_store() # Removed in favor of direct DB access
 vector_dbs = {}
 
@@ -131,11 +142,20 @@ async def model(state: State, config: RunnableConfig):
         context = "\n\n".join([doc.page_content for doc in all_docs])
 
         messages = list(messages) + [
-            HumanMessage(content=f"Context:\n{context}\n\nQuestion:\n{query}")
+            HumanMessage(content=f"Context:\n{context}\n\nQuestion:\n{query}\n\n(Current Date: {datetime.now().strftime('%B %d, %Y')})")
         ]
+    else:
+        # Also add date to regular messages to be sure
+        if messages and hasattr(messages[-1], "content"):
+            messages = list(messages)[:-1] + [
+                HumanMessage(content=messages[-1].content + f"\n\n(Current Date: {datetime.now().strftime('%B %d, %Y')})")
+            ]
 
     # Prepare messages with system prompt
-    final_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
+    current_date = datetime.now().strftime("%B %d, %Y")
+    system_content = f"{SYSTEM_PROMPT}\n\nCurrent Date: {current_date}"
+    print(f"DEBUG: System content sent to LLM:\n{system_content}")
+    final_messages = [{"role": "system", "content": system_content}] + messages
 
     if deep_research:
         result = await llm_with_tools.ainvoke(final_messages)
@@ -308,6 +328,11 @@ async def get_history(checkpoint_id: str):
 @app.get("/chats")
 async def get_chats():
     return get_chat_store()
+
+@app.delete("/delete_chat/{checkpoint_id}")
+async def delete_chat(checkpoint_id: str):
+    delete_chat_from_db(checkpoint_id)
+    return {"status": "deleted"}
 
 # ---------------- FILE UPLOAD ----------------
 @app.post("/upload/{chat_id}")
