@@ -29,6 +29,11 @@ export default function InputBar({
   const [isFocused, setIsFocused] = useState(false);
   const recognitionRef = useRef<any>(null);
   const sessionStartTextRef = useRef("");
+  const currentMessageRef = useRef(currentMessage);
+
+  useEffect(() => {
+    currentMessageRef.current = currentMessage;
+  }, [currentMessage]);
 
   const initRecognition = () => {
     try {
@@ -42,7 +47,7 @@ export default function InputBar({
 
           recognitionRef.current.onstart = () => {
             console.log("Speech recognition started");
-            sessionStartTextRef.current = currentMessage;
+            sessionStartTextRef.current = currentMessageRef.current;
             setIsListening(true);
           };
 
@@ -57,15 +62,28 @@ export default function InputBar({
             }
           };
 
+          let retryCount = 0;
           recognitionRef.current.onerror = (event: any) => {
             console.error('Speech recognition error:', event.error);
+            
+            if (event.error === 'network' && retryCount < 3) {
+              retryCount++;
+              console.log(`Retrying speech recognition (${retryCount}/3)...`);
+              setTimeout(() => {
+                try { recognitionRef.current.start(); } catch(e) {}
+              }, 1000);
+              return;
+            }
+
             setIsListening(false);
             if (event.error === 'not-allowed') {
-              alert("Microphone permission was denied. Please check your browser address bar to allow it.");
+              showToast("⚠️ Mic permission denied");
             } else if (event.error === 'no-speech') {
-              // Ignore no-speech as it happens often
-            } else {
-              alert("Mic error: " + event.error);
+              // Ignore
+            } else if (event.error === 'network') {
+              showToast("⚠️ Voice network error. Please check internet or use Chrome.");
+            } else if (event.error !== 'aborted') {
+              showToast(`Mic error: ${event.error}`);
             }
           };
 

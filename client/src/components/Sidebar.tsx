@@ -127,7 +127,12 @@ export default function Sidebar({
                             onDeleteChat(id);
                           }
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-all"
+                        className={`p-1.5 rounded-lg transition-all
+                          ${isActive 
+                            ? "opacity-100 text-red-400 bg-red-400/10" 
+                            : "opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 hover:bg-red-500/20"
+                          }
+                          lg:opacity-0 lg:group-hover:opacity-100`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

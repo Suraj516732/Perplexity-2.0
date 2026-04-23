@@ -97,13 +97,18 @@ export default function Home() {
   };
 
   // ── Delete chat ──
-  const handleDeleteChat = (id: string) => {
-    const updated = loadLocalChats();
-    delete updated[id];
-    localStorage.setItem("chats_list", JSON.stringify(updated));
-    localStorage.removeItem(`messages_${id}`);
-    setChats(updated);
-    if (id === checkpointId) handleNewChat();
+  const handleDeleteChat = async (id: string) => {
+    try {
+      await fetch(`http://localhost:8000/delete_chat/${id}`, { method: "DELETE" });
+      const updated = loadLocalChats();
+      delete updated[id];
+      localStorage.setItem("chats_list", JSON.stringify(updated));
+      localStorage.removeItem(`messages_${id}`);
+      setChats(updated);
+      if (id === checkpointId) handleNewChat();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
   };
 
   // ── New chat ──
@@ -244,16 +249,8 @@ export default function Home() {
              <span className="font-bold text-[15px] text-white tracking-[0.15em] uppercase">Perplexity <span className="text-[#D4C491]">2.0</span></span>
           </div>
 
-          {/* New Chat Button */}
-          <button 
-            onClick={handleNewChat}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90
-              ${isHomeView 
-                ? "bg-[#D4C491] text-black shadow-[0_0_20px_rgba(212,196,145,0.3)]" 
-                : "bg-white/5 border border-white/10 text-white"}`}
-          >
-            {isHomeView ? <Plus className="w-5 h-5" strokeWidth={3} /> : <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />}
-          </button>
+          {/* Right Spacer for centering */}
+          <div className="w-10" />
         </div>
         {loadingHistory ? (
           <div className="flex-1 flex items-center justify-center">

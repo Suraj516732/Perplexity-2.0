@@ -165,19 +165,19 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                 className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
               >
                 {!msg.isUser && (
-                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mr-4 flex-shrink-0 mt-1">
+                  <div className="hidden sm:flex w-8 h-8 rounded-xl bg-white/5 border border-white/10 items-center justify-center mr-4 flex-shrink-0 mt-1">
                     <Sparkles className="w-4 h-4 text-white/70" />
                   </div>
                 )}
 
-                <div className={`flex flex-col max-w-[85%] ${msg.isUser ? "items-end" : "items-start"}`}>
+                <div className={`flex flex-col w-full sm:max-w-[85%] ${msg.isUser ? "items-end ml-auto" : "items-start"}`}>
                   
                   {!msg.isUser && msg.searchInfo && <SearchBadge info={msg.searchInfo} />}
                   
-                  <div className={`group relative rounded-2xl px-4 md:px-5 py-3 md:py-4 text-[14px] md:text-[15px] leading-relaxed
+                  <div className={`group relative rounded-2xl px-4 md:px-6 py-3.5 md:py-5 text-[14px] md:text-[16px] leading-relaxed
                     ${msg.isUser
                       ? "bg-white/10 text-white border border-white/10 rounded-tr-sm"
-                      : "bg-[#0A0A0A] border border-white/5 text-gray-100 rounded-tl-sm w-full"
+                      : "bg-[#0A0A0A] border border-white/5 text-gray-100 rounded-tl-sm w-full shadow-sm"
                     }`}
                   >
                     {msg.isUser && msg.files && msg.files.length > 0 && (
