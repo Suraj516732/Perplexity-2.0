@@ -163,3 +163,18 @@ MIT License
 
 Inspired by Perplexity AI
 Built using modern AI + web technologies
+
+
+
+## 🙏 Credits
+
+This project was initially inspired by an existing open-source implementation.
+I have significantly modified and extended it by adding:
+
+* LangGraph-based multi-step reasoning
+* Streaming responses (SSE)
+* PostgreSQL integration
+* PDF-based RAG system
+* Improved UI and UX
+
+The current version reflects my own learning and enhancements.
