@@ -8,7 +8,8 @@ import API from "@/lib/api";
 import { Loader2, Globe, Link as LinkIcon, Menu, X, Plus, Sparkles, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface SearchInfo { stages: string[]; query: string; urls: string[]; }
+interface SearchResult { title: string; url: string; snippet: string; }
+interface SearchInfo { stages: string[]; query: string; urls: string[]; results?: SearchResult[]; }
 interface Message { id: number; content: string; isUser: boolean; type: string; isLoading?: boolean; searchInfo?: SearchInfo; }
 interface ChatItem { title: string; }
 
@@ -228,29 +229,30 @@ export default function Home() {
       <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-700`}>
         
         {/* Mobile Header */}
-        <div className="lg:hidden h-16 w-full border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-30 bg-black/80 backdrop-blur-xl sticky top-0">
+        <div className="lg:hidden flex items-center justify-between px-5 py-4 bg-black/95 backdrop-blur-xl sticky top-0 z-40 border-b border-white/[0.03]">
+          {/* Menu Toggle */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all active:scale-95"
+            className="w-10 h-10 flex items-center justify-start text-gray-500 active:text-white transition-colors"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-6 h-6" />
           </button>
           
-          <div className="flex items-center gap-2.5 cursor-pointer" onClick={handleNewChat}>
-             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#D4C491]/20 to-[#A39161]/20 border border-white/10 flex items-center justify-center shadow-lg shadow-[#D4C491]/10">
-                <Sparkles className="w-5 h-5 text-[#D4C491]/80" />
-             </div>
-             <div className="flex flex-col">
-               <span className="font-bold text-[13px] text-white tracking-tight leading-tight uppercase">Perplexity 2.0</span>
-               <span className="text-[8px] text-gray-500 font-bold tracking-[0.1em] uppercase">Pro Edition</span>
-             </div>
+          {/* Centered Logo */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group cursor-pointer" onClick={handleNewChat}>
+             <Sparkles className="w-4 h-4 text-[#D4C491] drop-shadow-[0_0_10px_rgba(212,196,145,0.4)]" />
+             <span className="font-bold text-[15px] text-white tracking-[0.15em] uppercase">Perplexity <span className="text-[#D4C491]">2.0</span></span>
           </div>
 
+          {/* New Chat Button */}
           <button 
             onClick={handleNewChat}
-            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white transition-all active:scale-95"
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90
+              ${isHomeView 
+                ? "bg-[#D4C491] text-black shadow-[0_0_20px_rgba(212,196,145,0.3)]" 
+                : "bg-white/5 border border-white/10 text-white"}`}
           >
-            {isHomeView ? <Plus className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            {isHomeView ? <Plus className="w-5 h-5" strokeWidth={3} /> : <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />}
           </button>
         </div>
         {loadingHistory ? (

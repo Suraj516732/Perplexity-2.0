@@ -4,10 +4,16 @@ import remarkGfm from "remark-gfm";
 import { Sparkles, Search, CheckCircle2, Globe, Link as LinkIcon, FileText, Copy, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
 interface SearchInfo {
   stages: string[];
   query: string;
   urls: string[];
+  results?: SearchResult[];
   error?: string;
 }
 interface Message {
@@ -71,6 +77,43 @@ const Loader2 = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 );
 
+const SourcesList = ({ results }: { results: SearchResult[] }) => {
+  if (!results || results.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-3 mb-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="flex items-center gap-2 text-white/40 text-[10px] font-bold uppercase tracking-widest mb-1 ml-1">
+        <LinkIcon className="w-3 h-3" />
+        <span>Sources</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {results.map((res, i) => {
+          let hostname = "";
+          try { hostname = new URL(res.url).hostname.replace('www.', ''); } catch { hostname = "link"; }
+          return (
+            <a 
+              key={i} 
+              href={res.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex flex-col gap-1.5 p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:border-[#D4C491]/30 hover:bg-[#D4C491]/5 transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#D4C491] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center p-0.5 flex-shrink-0">
+                   <img src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=32`} className="w-full h-full rounded-sm" alt="" />
+                </div>
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-tight truncate">{hostname}</span>
+              </div>
+              <span className="text-[13px] font-semibold text-white/90 line-clamp-1 group-hover:text-[#D4C491] transition-colors">{res.title}</span>
+              <span className="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">{res.snippet}</span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const MessageArea = ({ messages }: { messages: Message[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -90,9 +133,9 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
             transition={{ duration: 0.8 }}
             className="mb-4 md:mb-8"
           >
-             <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative group overflow-hidden">
-                <Sparkles className="w-8 h-8 text-white/80 group-hover:text-white transition-colors" />
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+             <div className="w-16 h-16 md:w-24 md:h-24 rounded-[28px] bg-white/5 border border-[#D4C491]/20 flex items-center justify-center relative group overflow-hidden shadow-[0_0_50px_rgba(212,196,145,0.1)]">
+                <Sparkles className="w-8 h-8 md:w-12 md:h-12 text-[#D4C491] group-hover:scale-110 transition-transform drop-shadow-[0_0_15px_rgba(212,196,145,0.4)]" />
+                <div className="absolute inset-0 bg-[#D4C491]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
              </div>
           </motion.div>
           
@@ -147,6 +190,8 @@ const MessageArea = ({ messages }: { messages: Message[] }) => {
                         ))}
                       </div>
                     )}
+                    {!msg.isUser && msg.searchInfo?.results && <SourcesList results={msg.searchInfo.results} />}
+                    
                     {msg.isLoading ? (
                       <div className="flex items-center gap-3">
                         <span className="text-gray-400 text-sm font-medium">Thinking</span>

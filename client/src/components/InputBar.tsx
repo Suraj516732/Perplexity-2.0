@@ -1,7 +1,7 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import API from "@/lib/api";
-import { Search, Paperclip, Zap, ArrowUp, Loader2, Globe, FileText, Lightbulb, Sparkles, X } from "lucide-react";
+import { ArrowUp, Paperclip, Search, Loader2, Sparkles, Zap, Mic, MicOff, FileText, Globe, Lightbulb, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface InputBarProps {
@@ -25,7 +25,85 @@ export default function InputBar({
 }: InputBarProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const sessionStartTextRef = useRef("");
+
+  const initRecognition = () => {
+    try {
+      if (typeof window !== 'undefined' && !recognitionRef.current) {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.continuous = true;
+          recognitionRef.current.interimResults = true;
+          recognitionRef.current.lang = 'en-US';
+
+          recognitionRef.current.onstart = () => {
+            console.log("Speech recognition started");
+            sessionStartTextRef.current = currentMessage;
+            setIsListening(true);
+          };
+
+          recognitionRef.current.onresult = (event: any) => {
+            let sessionTranscript = '';
+            for (let i = 0; i < event.results.length; ++i) {
+              sessionTranscript += event.results[i][0].transcript;
+            }
+            if (sessionTranscript) {
+              const newText = sessionStartTextRef.current + (sessionStartTextRef.current ? ' ' : '') + sessionTranscript;
+              setCurrentMessage(newText);
+            }
+          };
+
+          recognitionRef.current.onerror = (event: any) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+            if (event.error === 'not-allowed') {
+              alert("Microphone permission was denied. Please check your browser address bar to allow it.");
+            } else if (event.error === 'no-speech') {
+              // Ignore no-speech as it happens often
+            } else {
+              alert("Mic error: " + event.error);
+            }
+          };
+
+          recognitionRef.current.onend = () => {
+            console.log("Speech recognition ended");
+            setIsListening(false);
+          };
+        }
+      }
+    } catch (e) {
+      console.error("Failed to initialize speech recognition:", e);
+    }
+  };
+
+  const toggleListening = () => {
+    console.log("Toggle listening clicked, current state:", isListening);
+    if (typeof window === 'undefined') return;
+    
+    if (!recognitionRef.current) {
+      initRecognition();
+    }
+
+    if (!recognitionRef.current) {
+      alert("Your browser does not support voice typing. Please use Google Chrome or Microsoft Edge.");
+      return;
+    }
+
+    try {
+      if (isListening) {
+        recognitionRef.current.stop();
+      } else {
+        recognitionRef.current.start();
+      }
+    } catch (err) {
+      console.error("Recognition toggle error:", err);
+      setIsListening(false);
+    }
+  };
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -36,7 +114,7 @@ export default function InputBar({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { 
       e.preventDefault(); 
-      if (currentMessage.trim()) onSubmit(e); 
+      if (currentMessage.trim()) onSubmit(e as any); 
     }
   };
 
@@ -170,10 +248,23 @@ export default function InputBar({
           {/* Bottom row: Actions & Send */}
           <div className="flex items-center justify-between px-2 pb-1 relative z-10">
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => fileRef.current?.click()} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
-                {uploading ? <Loader2 className="w-4 h-4 animate-spin text-purple-400" /> : <Paperclip className="w-4 h-4" />}
+               <button type="button" onClick={() => fileRef.current?.click()} className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer">
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin text-[#D4C491]" /> : <Paperclip className="w-4 h-4" />}
               </button>
               <input type="file" ref={fileRef} onChange={handleFile} className="hidden" accept=".pdf" />
+
+              <button 
+                type="button" 
+                onClick={toggleListening}
+                className={`p-2 rounded-xl transition-all relative ${isListening ? "text-[#D4C491] bg-[#D4C491]/10" : "text-gray-400 hover:text-white hover:bg-white/10"}`}
+              >
+                {isListening ? (
+                  <>
+                    <Mic className="w-4 h-4 animate-pulse" />
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#D4C491] rounded-full animate-ping" />
+                  </>
+                ) : <Mic className="w-4 h-4" />}
+              </button>
 
               {/* Mode Toggle */}
               <button 
