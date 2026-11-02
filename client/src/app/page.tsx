@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import InputBar from "@/components/InputBar";
 import MessageArea from "@/components/MessageArea";
-import Sidebar from "@/components/Sidebar";
+import Sidebar, { KbDocument } from "@/components/Sidebar";
 import API from "@/lib/api";
 import { Loader2, Globe, Link as LinkIcon, Menu, X, Plus, Sparkles, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SearchResult { title: string; url: string; snippet: string; }
 interface SearchInfo { stages: string[]; query: string; urls: string[]; results?: SearchResult[]; }
-interface Message { id: number; content: string; isUser: boolean; type: string; isLoading?: boolean; searchInfo?: SearchInfo; }
+interface Message { id: number; content: string; isUser: boolean; type: string; isLoading?: boolean; searchInfo?: SearchInfo; files?: string[]; }
 interface ChatItem { title: string; }
 
 // ── LocalStorage helpers ──
@@ -43,6 +43,7 @@ export default function Home() {
   const [isDeepResearch, setIsDeepResearch] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [documents, setDocuments] = useState<KbDocument[]>([]);
 
   const isHomeView = !checkpointId && messages.length === 0;
 
@@ -67,10 +68,19 @@ export default function Home() {
   useEffect(() => { refreshChats(); }, []);
 
   // ── Switch to a chat: load from localStorage instantly, then try backend ──
+  const loadDocuments = (id: string) => {
+    fetch(`${API}/documents/${id}`)
+      .then(r => r.json())
+      .then(d => setDocuments(d.documents || []))
+      .catch(() => setDocuments([]));
+  };
+
   const switchToChat = (id: string) => {
     localStorage.setItem("checkpoint_id", id);
     setCheckpointId(id);
     setUploadedFiles([]);
+    setDocuments([]);
+    loadDocuments(id);
 
     const local = loadLocalMessages(id);
     if (local.length > 0) setMessages(local);
@@ -99,7 +109,7 @@ export default function Home() {
   // ── Delete chat ──
   const handleDeleteChat = async (id: string) => {
     try {
-      await fetch(`http://localhost:8000/delete_chat/${id}`, { method: "DELETE" });
+      await fetch(`${API}/delete_chat/${id}`, { method: "DELETE" });
       const updated = loadLocalChats();
       delete updated[id];
       localStorage.setItem("chats_list", JSON.stringify(updated));
@@ -117,6 +127,7 @@ export default function Home() {
     setCheckpointId(null);
     setMessages([]);
     setUploadedFiles([]);
+    setDocuments([]);
   };
 
   const getOrCreateCheckpoint = () => {
@@ -127,13 +138,36 @@ export default function Home() {
     return newId;
   };
 
+  // ── Knowledge base: PDFs attached to the active chat ──
+  const uploadPdf = async (file: File) => {
+    const chatId = getOrCreateCheckpoint();
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`${API}/upload/${chatId}`, { method: "POST", body: fd });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `Upload failed (HTTP ${res.status})`);
+    setDocuments(data.documents || []);
+    refreshChats();
+  };
+
+  const removeDocument = async (docId: string) => {
+    if (!checkpointId) return;
+    const res = await fetch(`${API}/documents/${checkpointId}/${docId}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
+    setDocuments(data.documents || []);
+  };
+
   // ── Send message (can be triggered by form or manually) ──
-  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLInputElement>, manualMessage?: string) => {
+  const handleSubmit = async (e?: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLInputElement>, manualMessage?: string, forceNew = false) => {
     if (e) e.preventDefault();
     const messageToSubmit = manualMessage || currentMessage;
     if (!messageToSubmit.trim()) return;
 
-    const nextId = messages.length > 0 ? Math.max(...messages.map(m => m.id)) + 1 : 1;
+    // State updates from handleNewChat() are not visible in this closure yet
+    const chatId = forceNew ? null : checkpointId;
+    const baseMessages = forceNew ? [] : messages;
+
+    const nextId = baseMessages.length > 0 ? Math.max(...baseMessages.map(m => m.id)) + 1 : 1;
     const userMsg: Message = { 
       id: nextId, 
       content: messageToSubmit, 
@@ -144,7 +178,7 @@ export default function Home() {
 
     setMessages(p => {
       const updated = [...p, userMsg];
-      if (checkpointId) saveLocalMessages(checkpointId, updated);
+      if (chatId) saveLocalMessages(chatId, updated);
       return updated;
     });
 
@@ -156,12 +190,12 @@ export default function Home() {
     setMessages(p => [...p, { id: aiId, content: "", isUser: false, type: "message", isLoading: true, searchInfo: { stages: [], query: "", urls: [] } }]);
 
     let url = `${API}/chat_stream/${encodeURIComponent(input)}?deep_research=${isDeepResearch}`;
-    if (checkpointId) url += `&checkpoint_id=${checkpointId}`;
+    if (chatId) url += `&checkpoint_id=${chatId}`;
 
     const es = new EventSource(url);
     let streamed = "";
     let search: SearchInfo | null = null;
-    let activeId = checkpointId;
+    let activeId = chatId;
 
     es.onmessage = ev => {
       const d = JSON.parse(ev.data);
@@ -186,18 +220,29 @@ export default function Home() {
         setMessages(p => p.map(m => m.id === aiId ? { ...m, searchInfo: search! } : m));
       }
       else if (d.type === "search_results") {
-        const urls = typeof d.urls === "string" ? JSON.parse(d.urls) : d.urls;
-        search = { stages: [...(search?.stages || []), "reading"], query: search?.query || "", urls };
+        const results: SearchResult[] = Array.isArray(d.results) ? d.results : [];
+        const urls = results.map(r => r.url).filter(Boolean);
+        search = { stages: [...(search?.stages || []), "reading"], query: search?.query || "", urls, results };
         setMessages(p => p.map(m => m.id === aiId ? { ...m, searchInfo: search! } : m));
+      }
+      else if (d.type === "error") {
+        streamed = streamed || `⚠️ ${d.message || "Something went wrong. Please try again."}`;
+        setMessages(p => p.map(m => m.id === aiId ? { ...m, content: streamed, isLoading: false } : m));
       }
       else if (d.type === "end") es.close();
     };
-    es.onerror = () => es.close();
+    es.onerror = () => {
+      es.close();
+      if (!streamed) {
+        streamed = "⚠️ Could not reach the server. Make sure the backend is running.";
+        setMessages(p => p.map(m => m.id === aiId ? { ...m, content: streamed, isLoading: false } : m));
+      }
+    };
   };
 
   const handleCategoryClick = (prompt: string) => {
     handleNewChat();
-    handleSubmit(undefined, prompt);
+    handleSubmit(undefined, prompt, true);
   };
 
   const allSources = messages.flatMap(m => m.searchInfo?.urls || []).filter((v, i, a) => a.indexOf(v) === i);
@@ -228,6 +273,9 @@ export default function Home() {
         onCategoryClick={handleCategoryClick}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        documents={documents}
+        onUploadPdf={uploadPdf}
+        onRemoveDocument={removeDocument}
       />
 
       {/* Main Chat Area */}
@@ -290,8 +338,7 @@ export default function Home() {
                 setIsDeepResearch={setIsDeepResearch}
                 uploadedFiles={uploadedFiles}
                 setUploadedFiles={setUploadedFiles}
-                getOrCreateCheckpoint={getOrCreateCheckpoint}
-                refreshChats={refreshChats}
+                onUploadPdf={uploadPdf}
               />
             </div>
           </div>

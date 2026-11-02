@@ -23,6 +23,7 @@ interface Message {
   type: string;
   isLoading?: boolean;
   searchInfo?: SearchInfo;
+  files?: string[];
 }
 
 const Dots = () => (

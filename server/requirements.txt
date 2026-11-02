@@ -64,7 +64,8 @@ pypdf==5.4.0
 faiss-cpu==1.10.0
 langchain-tavily==0.1.6
 tavily-python==0.5.1
-langgraph-checkpoint-sqlite
-langgraph-checkpoint-postgres
-psycopg[binary]
-psycopg-pool
+langgraph-checkpoint-sqlite==2.0.11
+langgraph-checkpoint-postgres==2.0.24
+aiosqlite==0.21.0
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3

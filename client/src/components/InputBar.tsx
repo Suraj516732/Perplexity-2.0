@@ -1,6 +1,5 @@
 "use client";
 import { useRef, useState, useEffect } from "react";
-import API from "@/lib/api";
 import { ArrowUp, Paperclip, Search, Loader2, Sparkles, Zap, Mic, MicOff, FileText, Globe, Lightbulb, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,14 +13,13 @@ interface InputBarProps {
   setIsDeepResearch: (v: boolean) => void;
   uploadedFiles: string[];
   setUploadedFiles: (v: string[] | ((p: string[]) => string[])) => void;
-  getOrCreateCheckpoint: () => string;
-  refreshChats: () => void;
+  onUploadPdf: (file: File) => Promise<void>;
 }
 
 export default function InputBar({ 
   currentMessage, setCurrentMessage, onSubmit, checkpointId, hasMessages,
   isDeepResearch, setIsDeepResearch, uploadedFiles, setUploadedFiles,
-  getOrCreateCheckpoint, refreshChats
+  onUploadPdf
 }: InputBarProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -140,19 +138,11 @@ export default function InputBar({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const activeId = getOrCreateCheckpoint();
-
     try {
       setUploading(true);
-      const fd = new FormData();
-      fd.append("file", file);
-      
-      const res = await fetch(`${API}/upload/${activeId}`, { method: "POST", body: fd });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      
+      await onUploadPdf(file);
       setUploadedFiles(prev => [...prev, file.name]);
-      showToast("✅ PDF uploaded successfully!");
-      refreshChats();
+      showToast("✅ PDF added to this chat's knowledge base");
     } catch (err: any) {
       showToast(`Upload failed — ${err.message}`);
     } finally {
